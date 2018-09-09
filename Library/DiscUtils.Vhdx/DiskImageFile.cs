@@ -222,6 +222,14 @@ namespace DiscUtils.Vhdx
         }
 
         /// <summary>
+        /// Gets the physical sector size of the virtual disk.
+        /// </summary>
+        public long PhysicalSectorSize
+        {
+            get { return _metadata.PhysicalSectorSize; }
+        }
+
+        /// <summary>
         /// Gets the logical sector size of the virtual disk.
         /// </summary>
         public long LogicalSectorSize
@@ -312,7 +320,7 @@ namespace DiscUtils.Vhdx
         /// <returns>An object that accesses the stream as a VHDX file.</returns>
         public static DiskImageFile InitializeDynamic(Stream stream, Ownership ownsStream, long capacity)
         {
-            InitializeDynamicInternal(stream, capacity, FileParameters.DefaultDynamicBlockSize);
+            InitializeDynamicInternal(stream, capacity, FileParameters.DefaultDynamicBlockSize, FileParameters.DefaultPhysicalSectorSize, FileParameters.DefaultLogicalSectorSize);
             return new DiskImageFile(stream, ownsStream);
         }
 
@@ -326,8 +334,23 @@ namespace DiscUtils.Vhdx
         /// <returns>An object that accesses the stream as a VHDX file.</returns>
         public static DiskImageFile InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, long blockSize)
         {
-            InitializeDynamicInternal(stream, capacity, blockSize);
+            InitializeDynamicInternal(stream, capacity, blockSize, FileParameters.DefaultPhysicalSectorSize, FileParameters.DefaultLogicalSectorSize);
+            return new DiskImageFile(stream, ownsStream);
+        }
 
+        /// <summary>
+        /// Initializes a stream as a dynamically-sized VHDX file.
+        /// </summary>
+        /// <param name="stream">The stream to initialize.</param>
+        /// <param name="ownsStream">Indicates if the new instance controls the lifetime of the stream.</param>
+        /// <param name="capacity">The desired capacity of the new disk.</param>
+        /// <param name="blockSize">The size of each block (unit of allocation).</param>
+        /// <param name="physicalSectorSize">The size of the physical sector.</param>
+        /// <param name="logicalSectorSize">The size of the logical sector.</param>
+        /// <returns>An object that accesses the stream as a VHDX file.</returns>
+        public static DiskImageFile InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, long blockSize, int physicalSectorSize, int logicalSectorSize)
+        {
+            InitializeDynamicInternal(stream, capacity, blockSize, (uint)physicalSectorSize, (uint)logicalSectorSize);
             return new DiskImageFile(stream, ownsStream);
         }
 
@@ -420,13 +443,13 @@ namespace DiscUtils.Vhdx
             return result;
         }
 
-        internal static DiskImageFile InitializeDynamic(FileLocator locator, string path, long capacity, long blockSize)
+        internal static DiskImageFile InitializeDynamic(FileLocator locator, string path, long capacity, long blockSize, uint physicalSectorSize, uint logicalSectorSize)
         {
             DiskImageFile result = null;
             Stream stream = locator.Open(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
             try
             {
-                InitializeDynamicInternal(stream, capacity, blockSize);
+                InitializeDynamicInternal(stream, capacity, blockSize, physicalSectorSize, logicalSectorSize);
                 result = new DiskImageFile(locator, path, stream, Ownership.Dispose);
                 stream = null;
             }
@@ -507,7 +530,7 @@ namespace DiscUtils.Vhdx
             throw new NotImplementedException();
         }
 
-        private static void InitializeDynamicInternal(Stream stream, long capacity, long blockSize)
+        private static void InitializeDynamicInternal(Stream stream, long capacity, long blockSize, uint physicalSectorSize, uint logicalSectorSize)
         {
             if (blockSize < Sizes.OneMiB || blockSize > Sizes.OneMiB * 256 || !Utilities.IsPowerOfTwo(blockSize))
             {
@@ -515,8 +538,18 @@ namespace DiscUtils.Vhdx
                     "BlockSize must be a power of 2 between 1MB and 256MB");
             }
 
-            int logicalSectorSize = 512;
-            int physicalSectorSize = 4096;
+            if (physicalSectorSize != Sizes.Sector && physicalSectorSize != Sizes.Sector4K)
+            {
+                throw new ArgumentOutOfRangeException(nameof(physicalSectorSize), 
+                    "Physical sector size must be either 512 or 4096");
+            }
+
+            if (logicalSectorSize != Sizes.Sector && logicalSectorSize != Sizes.Sector4K)
+            {
+                throw new ArgumentOutOfRangeException(nameof(logicalSectorSize),
+                    "Logical sector size must be either 512 or 4096");
+            }
+
             long chunkRatio = 0x800000L * logicalSectorSize / blockSize;
             long dataBlocksCount = MathUtilities.Ceil(capacity, blockSize);
             long sectorBitmapBlocksCount = MathUtilities.Ceil(dataBlocksCount, chunkRatio);

@@ -29,6 +29,8 @@ namespace DiscUtils.Vhdx
         public const uint DefaultBlockSize = 32 * (uint)Sizes.OneMiB;
         public const uint DefaultDifferencingBlockSize = 2 * (uint)Sizes.OneMiB;
         public const uint DefaultDynamicBlockSize = 32 * (uint)Sizes.OneMiB;
+        public const uint DefaultPhysicalSectorSize = Sizes.Sector4K;
+        public const uint DefaultLogicalSectorSize = Sizes.Sector;
 
         public uint BlockSize;
         public FileParametersFlags Flags;

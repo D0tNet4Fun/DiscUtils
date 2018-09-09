@@ -29,5 +29,6 @@ namespace DiscUtils.Streams
         public const long OneGiB = 1024 * OneMiB;
 
         public const int Sector = 512;
+        public const int Sector4K = 4096;
     }
 }

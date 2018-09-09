@@ -297,6 +297,16 @@ namespace DiscUtils.Vhdx
             }
         }
 
+        public int PhysicalSectorSize
+        {
+            get { return (int)_files[0].Item1.PhysicalSectorSize; }
+        }
+
+        public int LogicalSectorSize
+        {
+            get { return (int)_files[0].Item1.LogicalSectorSize; }
+        }
+
         /// <summary>
         /// Initializes a stream as a fixed-sized VHDX file.
         /// </summary>
@@ -345,6 +355,21 @@ namespace DiscUtils.Vhdx
         public static Disk InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, long blockSize)
         {
             return new Disk(DiskImageFile.InitializeDynamic(stream, ownsStream, capacity, blockSize), Ownership.Dispose);
+        }
+
+        /// <summary>
+        /// Initializes a stream as a dynamically-sized VHDX file.
+        /// </summary>
+        /// <param name="stream">The stream to initialize.</param>
+        /// <param name="ownsStream">Indicates if the new instance controls the lifetime of the stream.</param>
+        /// <param name="capacity">The desired capacity of the new disk.</param>
+        /// <param name="blockSize">The size of each block (unit of allocation).</param>
+        /// <param name="physicalSectorSize">The size of the physical sector.</param>
+        /// <param name="logicalSectorSize">The size of the logical sector.</param>
+        /// <returns>An object that accesses the stream as a VHDX file.</returns>
+        public static Disk InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, long blockSize, int physicalSectorSize, int logicalSectorSize)
+        {
+            return new Disk(DiskImageFile.InitializeDynamic(stream, ownsStream, capacity, blockSize, physicalSectorSize, logicalSectorSize), Ownership.Dispose);
         }
 
         /// <summary>
@@ -425,7 +450,7 @@ namespace DiscUtils.Vhdx
 
         internal static Disk InitializeDynamic(FileLocator fileLocator, string path, long capacity, long blockSize)
         {
-            return new Disk(DiskImageFile.InitializeDynamic(fileLocator, path, capacity, blockSize), Ownership.Dispose);
+            return new Disk(DiskImageFile.InitializeDynamic(fileLocator, path, capacity, blockSize, FileParameters.DefaultPhysicalSectorSize, FileParameters.DefaultLogicalSectorSize), Ownership.Dispose);
         }
 
         /// <summary>
