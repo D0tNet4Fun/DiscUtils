@@ -34,6 +34,10 @@ namespace DiscUtils.Vhdx
     /// </summary>
     public sealed class Disk : VirtualDisk
     {
+        internal const string ExtendedParameterKeyBlockSize = "VHDX.BlockSize";
+        internal const string ExtendedParameterKeyPhysicalSectorSize = "VHDX.PhysicalSectorSize";
+        internal const string ExtendedParameterKeyLogicalSectorSize = "VHDX.LogicalSectorSize";
+
         /// <summary>
         /// The stream representing the disk's contents.
         /// </summary>
@@ -221,7 +225,7 @@ namespace DiscUtils.Vhdx
         /// </summary>
         public override int BlockSize
         {
-            get { return (int)_files[0].Item1.LogicalSectorSize; }
+            get { return (int)_files[0].Item1.BlockSize; }
         }
 
         /// <summary>
@@ -305,6 +309,24 @@ namespace DiscUtils.Vhdx
         public int LogicalSectorSize
         {
             get { return (int)_files[0].Item1.LogicalSectorSize; }
+        }
+
+        public override VirtualDiskParameters Parameters
+        {
+            get
+            {
+                var diskParameters = new VirtualDiskParameters
+                {
+                    Capacity = Capacity,
+                    DiskType = DiskClass,
+                    Geometry = Geometry,
+                    BiosGeometry = BiosGeometry
+                };
+                diskParameters.ExtendedParameters[ExtendedParameterKeyBlockSize] = BlockSize.ToString();
+                diskParameters.ExtendedParameters[ExtendedParameterKeyPhysicalSectorSize] = PhysicalSectorSize.ToString();
+                diskParameters.ExtendedParameters[ExtendedParameterKeyLogicalSectorSize] = LogicalSectorSize.ToString();
+                return diskParameters;
+            }
         }
 
         /// <summary>
@@ -448,9 +470,9 @@ namespace DiscUtils.Vhdx
             return new Disk(DiskImageFile.InitializeFixed(fileLocator, path, capacity, geometry), Ownership.Dispose);
         }
 
-        internal static Disk InitializeDynamic(FileLocator fileLocator, string path, long capacity, long blockSize)
+        internal static Disk InitializeDynamic(FileLocator fileLocator, string path, long capacity, long blockSize, uint physicalSectorSize, uint logicalSectorSize)
         {
-            return new Disk(DiskImageFile.InitializeDynamic(fileLocator, path, capacity, blockSize, FileParameters.DefaultPhysicalSectorSize, FileParameters.DefaultLogicalSectorSize), Ownership.Dispose);
+            return new Disk(DiskImageFile.InitializeDynamic(fileLocator, path, capacity, blockSize, physicalSectorSize, logicalSectorSize), Ownership.Dispose);
         }
 
         /// <summary>

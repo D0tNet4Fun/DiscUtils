@@ -35,10 +35,12 @@ namespace DiscUtils.Vhdx
     /// is simply to present a VHD version of an existing disk.</remarks>
     public sealed class DiskBuilder : DiskImageBuilder
     {
-        private long _blockSize = 32 * Sizes.OneMiB;
+        private long _blockSize = FileParameters.DefaultBlockSize;
+        private uint _physicalSectorSize = FileParameters.DefaultPhysicalSectorSize;
+        private uint _logicalSectorSize = FileParameters.DefaultLogicalSectorSize;
 
         /// <summary>
-        /// The VHDX block size, or <c>0</c> (indicating default).
+        /// The VHDX block size.
         /// </summary>
         public long BlockSize
         {
@@ -51,6 +53,40 @@ namespace DiscUtils.Vhdx
                 }
 
                 _blockSize = value;
+            }
+        }
+
+        /// <summary>
+        /// The physical sector size.
+        /// </summary>
+        public int PhysicalSectorSize
+        {
+            get { return (int)_physicalSectorSize; }
+            set
+            {
+                if (value != Sizes.Sector && value != Sizes.Sector4K)
+                {
+                    throw new ArgumentException("Physical sector size must be either 512 or 4096");
+                }
+
+                _physicalSectorSize = (uint)value;
+            }
+        }
+
+        /// <summary>
+        /// The logical sector size. Can be either 512 or 4096.
+        /// </summary>
+        public int LogicalSectorSize
+        {
+            get { return (int)_logicalSectorSize; }
+            set
+            {
+                if (value != Sizes.Sector && value != Sizes.Sector4K)
+                {
+                    throw new ArgumentException("Logical sector size must be either 512 or 4096");
+                }
+
+                _logicalSectorSize = (uint)value;
             }
         }
 
@@ -78,7 +114,7 @@ namespace DiscUtils.Vhdx
             }
 
             DiskImageFileSpecification fileSpec = new DiskImageFileSpecification(baseName + ".vhdx",
-                new DiskStreamBuilder(Content, DiskType, BlockSize));
+                new DiskStreamBuilder(Content, DiskType, BlockSize, PhysicalSectorSize, LogicalSectorSize));
 
             return new[] { fileSpec };
         }
@@ -86,14 +122,18 @@ namespace DiscUtils.Vhdx
         private class DiskStreamBuilder : StreamBuilder
         {
             private readonly long _blockSize;
+            private readonly int _physicalSectorSize;
+            private readonly int _logicalSectorSize;
             private readonly SparseStream _content;
             private readonly DiskType _diskType;
 
-            public DiskStreamBuilder(SparseStream content, DiskType diskType, long blockSize)
+            public DiskStreamBuilder(SparseStream content, DiskType diskType, long blockSize, int physicalSectorSize, int logicalSectorSize)
             {
                 _content = content;
                 _diskType = diskType;
                 _blockSize = blockSize;
+                _physicalSectorSize = physicalSectorSize;
+                _logicalSectorSize = logicalSectorSize;
             }
 
             protected override List<BuilderExtent> FixExtents(out long totalLength)
@@ -105,9 +145,7 @@ namespace DiscUtils.Vhdx
 
                 List<BuilderExtent> extents = new List<BuilderExtent>();
 
-                int logicalSectorSize = 512;
-                int physicalSectorSize = 4096;
-                long chunkRatio = 0x800000L * logicalSectorSize / _blockSize;
+                long chunkRatio = 0x800000L * _logicalSectorSize / _blockSize;
                 long dataBlocksCount = MathUtilities.Ceil(_content.Length, _blockSize);
                 long sectorBitmapBlocksCount = MathUtilities.Ceil(dataBlocksCount, chunkRatio);
                 long totalBatEntriesDynamic = dataBlocksCount + (dataBlocksCount - 1) / chunkRatio;
@@ -169,8 +207,8 @@ namespace DiscUtils.Vhdx
 
                 byte[] metadataBuffer = new byte[metadataRegion.Length];
                 MemoryStream metadataStream = new MemoryStream(metadataBuffer);
-                Metadata.Initialize(metadataStream, fileParams, (ulong)_content.Length, (uint)logicalSectorSize,
-                    (uint)physicalSectorSize, null);
+                Metadata.Initialize(metadataStream, fileParams, (ulong)_content.Length, (uint)_logicalSectorSize,
+                    (uint)_physicalSectorSize, null);
                 extents.Add(new BuilderBufferExtent(metadataRegion.FileOffset, metadataBuffer));
 
                 List<Range<long, long>> presentBlocks =

@@ -222,6 +222,14 @@ namespace DiscUtils.Vhdx
         }
 
         /// <summary>
+        /// Gets the size of each block (unit of allocation).
+        /// </summary>
+        public int BlockSize
+        {
+            get { return (int)_metadata.FileParameters.BlockSize; }
+        }
+
+        /// <summary>
         /// Gets the physical sector size of the virtual disk.
         /// </summary>
         public long PhysicalSectorSize
