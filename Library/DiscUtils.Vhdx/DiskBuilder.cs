@@ -35,14 +35,14 @@ namespace DiscUtils.Vhdx
     /// is simply to present a VHD version of an existing disk.</remarks>
     public sealed class DiskBuilder : DiskImageBuilder
     {
-        private long _blockSize = FileParameters.DefaultBlockSize;
-        private uint _physicalSectorSize = FileParameters.DefaultPhysicalSectorSize;
-        private uint _logicalSectorSize = FileParameters.DefaultLogicalSectorSize;
+        private int _blockSize = FileParameters.DefaultBlockSize;
+        private int _physicalSectorSize = FileParameters.DefaultPhysicalSectorSize;
+        private int _logicalSectorSize = FileParameters.DefaultLogicalSectorSize;
 
         /// <summary>
         /// The VHDX block size.
         /// </summary>
-        public long BlockSize
+        public int BlockSize
         {
             get { return _blockSize; }
             set
@@ -61,7 +61,7 @@ namespace DiscUtils.Vhdx
         /// </summary>
         public int PhysicalSectorSize
         {
-            get { return (int)_physicalSectorSize; }
+            get { return _physicalSectorSize; }
             set
             {
                 if (value != Sizes.Sector && value != Sizes.Sector4K)
@@ -69,7 +69,7 @@ namespace DiscUtils.Vhdx
                     throw new ArgumentException("Physical sector size must be either 512 or 4096");
                 }
 
-                _physicalSectorSize = (uint)value;
+                _physicalSectorSize = value;
             }
         }
 
@@ -78,7 +78,7 @@ namespace DiscUtils.Vhdx
         /// </summary>
         public int LogicalSectorSize
         {
-            get { return (int)_logicalSectorSize; }
+            get { return _logicalSectorSize; }
             set
             {
                 if (value != Sizes.Sector && value != Sizes.Sector4K)
@@ -86,7 +86,7 @@ namespace DiscUtils.Vhdx
                     throw new ArgumentException("Logical sector size must be either 512 or 4096");
                 }
 
-                _logicalSectorSize = (uint)value;
+                _logicalSectorSize = value;
             }
         }
 
@@ -121,13 +121,13 @@ namespace DiscUtils.Vhdx
 
         private class DiskStreamBuilder : StreamBuilder
         {
-            private readonly long _blockSize;
+            private readonly int _blockSize;
             private readonly int _physicalSectorSize;
             private readonly int _logicalSectorSize;
             private readonly SparseStream _content;
             private readonly DiskType _diskType;
 
-            public DiskStreamBuilder(SparseStream content, DiskType diskType, long blockSize, int physicalSectorSize, int logicalSectorSize)
+            public DiskStreamBuilder(SparseStream content, DiskType diskType, int blockSize, int physicalSectorSize, int logicalSectorSize)
             {
                 _content = content;
                 _diskType = diskType;

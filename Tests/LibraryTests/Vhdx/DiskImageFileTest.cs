@@ -27,7 +27,7 @@ namespace LibraryTests.Vhdx
         public void InitializeDynamic_With_User_Defined_Physical_And_Logical_Sector_Sizes(int physicalSectorSize, int logicalSectorSize)
         {
             using (var ms = new MemoryStream())
-            using (var diskImageFile = DiskImageFile.InitializeDynamic(ms, Ownership.Dispose, capacity: 128 * Sizes.OneMiB, blockSize: 32 * Sizes.OneMiB,
+            using (var diskImageFile = DiskImageFile.InitializeDynamic(ms, Ownership.Dispose, capacity: 128 * Sizes.OneMiB, blockSize: 32 * (int)Sizes.OneMiB,
                 physicalSectorSize: physicalSectorSize, logicalSectorSize: logicalSectorSize))
             {
                 Assert.NotNull(diskImageFile);
@@ -44,7 +44,7 @@ namespace LibraryTests.Vhdx
             using (var ms = new MemoryStream())
             {
                 var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                    DiskImageFile.InitializeDynamic(ms, Ownership.Dispose, capacity: 128 * Sizes.OneMiB, blockSize: 32 * Sizes.OneMiB,
+                    DiskImageFile.InitializeDynamic(ms, Ownership.Dispose, capacity: 128 * Sizes.OneMiB, blockSize: 32 * (int)Sizes.OneMiB,
                         physicalSectorSize: physicalSectorSize, logicalSectorSize: 4096));
                 Assert.Equal("physicalSectorSize", exception.ParamName);
             }
@@ -58,7 +58,7 @@ namespace LibraryTests.Vhdx
             using (var ms = new MemoryStream())
             {
                 var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                    DiskImageFile.InitializeDynamic(ms, Ownership.Dispose, capacity: 128 * Sizes.OneMiB, blockSize: 32 * Sizes.OneMiB,
+                    DiskImageFile.InitializeDynamic(ms, Ownership.Dispose, capacity: 128 * Sizes.OneMiB, blockSize: 32 * (int)Sizes.OneMiB,
                         physicalSectorSize: 4096, logicalSectorSize: logicalSectorSize));
                 Assert.Equal("logicalSectorSize", exception.ParamName);
             }

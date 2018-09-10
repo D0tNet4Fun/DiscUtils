@@ -232,17 +232,17 @@ namespace DiscUtils.Vhdx
         /// <summary>
         /// Gets the physical sector size of the virtual disk.
         /// </summary>
-        public long PhysicalSectorSize
+        public int PhysicalSectorSize
         {
-            get { return _metadata.PhysicalSectorSize; }
+            get { return (int)_metadata.PhysicalSectorSize; }
         }
 
         /// <summary>
         /// Gets the logical sector size of the virtual disk.
         /// </summary>
-        public long LogicalSectorSize
+        public int LogicalSectorSize
         {
-            get { return _metadata.LogicalSectorSize; }
+            get { return (int)_metadata.LogicalSectorSize; }
         }
 
         /// <summary>
@@ -340,7 +340,7 @@ namespace DiscUtils.Vhdx
         /// <param name="capacity">The desired capacity of the new disk.</param>
         /// <param name="blockSize">The size of each block (unit of allocation).</param>
         /// <returns>An object that accesses the stream as a VHDX file.</returns>
-        public static DiskImageFile InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, long blockSize)
+        public static DiskImageFile InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, int blockSize)
         {
             InitializeDynamicInternal(stream, capacity, blockSize, FileParameters.DefaultPhysicalSectorSize, FileParameters.DefaultLogicalSectorSize);
             return new DiskImageFile(stream, ownsStream);
@@ -356,9 +356,9 @@ namespace DiscUtils.Vhdx
         /// <param name="physicalSectorSize">The size of the physical sector.</param>
         /// <param name="logicalSectorSize">The size of the logical sector.</param>
         /// <returns>An object that accesses the stream as a VHDX file.</returns>
-        public static DiskImageFile InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, long blockSize, int physicalSectorSize, int logicalSectorSize)
+        public static DiskImageFile InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize)
         {
-            InitializeDynamicInternal(stream, capacity, blockSize, (uint)physicalSectorSize, (uint)logicalSectorSize);
+            InitializeDynamicInternal(stream, capacity, blockSize, physicalSectorSize, logicalSectorSize);
             return new DiskImageFile(stream, ownsStream);
         }
 
@@ -451,7 +451,7 @@ namespace DiscUtils.Vhdx
             return result;
         }
 
-        internal static DiskImageFile InitializeDynamic(FileLocator locator, string path, long capacity, long blockSize, uint physicalSectorSize, uint logicalSectorSize)
+        internal static DiskImageFile InitializeDynamic(FileLocator locator, string path, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize)
         {
             DiskImageFile result = null;
             Stream stream = locator.Open(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
@@ -538,7 +538,7 @@ namespace DiscUtils.Vhdx
             throw new NotImplementedException();
         }
 
-        private static void InitializeDynamicInternal(Stream stream, long capacity, long blockSize, uint physicalSectorSize, uint logicalSectorSize)
+        private static void InitializeDynamicInternal(Stream stream, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize)
         {
             if (blockSize < Sizes.OneMiB || blockSize > Sizes.OneMiB * 256 || !Utilities.IsPowerOfTwo(blockSize))
             {

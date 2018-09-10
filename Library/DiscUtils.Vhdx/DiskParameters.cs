@@ -55,7 +55,7 @@ namespace DiscUtils.Vhdx
         /// </summary>
         public int BlockSize
         {
-            get { return _blockSize != 0 ? _blockSize : (int)FileParameters.DefaultBlockSize; }
+            get { return _blockSize != 0 ? _blockSize : FileParameters.DefaultBlockSize; }
             set { _blockSize = value; }
         }
 
@@ -64,7 +64,7 @@ namespace DiscUtils.Vhdx
         /// </summary>
         public int PhysicalSectorSize
         {
-            get { return _physicalSectorSize != 0 ? _physicalSectorSize : (int)FileParameters.DefaultPhysicalSectorSize; }
+            get { return _physicalSectorSize != 0 ? _physicalSectorSize : FileParameters.DefaultPhysicalSectorSize; }
             set { _physicalSectorSize = value; }
         }
 
@@ -73,7 +73,7 @@ namespace DiscUtils.Vhdx
         /// </summary>
         public int LogicalSectorSize
         {
-            get { return _logicalSectorSize != 0 ? _logicalSectorSize : (int)FileParameters.DefaultLogicalSectorSize; }
+            get { return _logicalSectorSize != 0 ? _logicalSectorSize : FileParameters.DefaultLogicalSectorSize; }
             set { _logicalSectorSize = value; }
         }
     }

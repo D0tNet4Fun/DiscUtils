@@ -374,7 +374,7 @@ namespace DiscUtils.Vhdx
         /// <param name="capacity">The desired capacity of the new disk.</param>
         /// <param name="blockSize">The size of each block (unit of allocation).</param>
         /// <returns>An object that accesses the stream as a VHDX file.</returns>
-        public static Disk InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, long blockSize)
+        public static Disk InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, int blockSize)
         {
             return new Disk(DiskImageFile.InitializeDynamic(stream, ownsStream, capacity, blockSize), Ownership.Dispose);
         }
@@ -389,7 +389,7 @@ namespace DiscUtils.Vhdx
         /// <param name="physicalSectorSize">The size of the physical sector.</param>
         /// <param name="logicalSectorSize">The size of the logical sector.</param>
         /// <returns>An object that accesses the stream as a VHDX file.</returns>
-        public static Disk InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, long blockSize, int physicalSectorSize, int logicalSectorSize)
+        public static Disk InitializeDynamic(Stream stream, Ownership ownsStream, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize)
         {
             return new Disk(DiskImageFile.InitializeDynamic(stream, ownsStream, capacity, blockSize, physicalSectorSize, logicalSectorSize), Ownership.Dispose);
         }
@@ -470,7 +470,7 @@ namespace DiscUtils.Vhdx
             return new Disk(DiskImageFile.InitializeFixed(fileLocator, path, capacity, geometry), Ownership.Dispose);
         }
 
-        internal static Disk InitializeDynamic(FileLocator fileLocator, string path, long capacity, long blockSize, uint physicalSectorSize, uint logicalSectorSize)
+        internal static Disk InitializeDynamic(FileLocator fileLocator, string path, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize)
         {
             return new Disk(DiskImageFile.InitializeDynamic(fileLocator, path, capacity, blockSize, physicalSectorSize, logicalSectorSize), Ownership.Dispose);
         }

@@ -143,9 +143,9 @@ namespace DiscUtils.Vhdx
         /// <summary>
         /// Gets the logical sector size of the disk represented by the VHDX file.
         /// </summary>
-        public long LogicalSectorSize
+        public int LogicalSectorSize
         {
-            get { return _metadata.LogicalSectorSize; }
+            get { return (int)_metadata.LogicalSectorSize; }
         }
 
         /// <summary>
@@ -180,9 +180,9 @@ namespace DiscUtils.Vhdx
         /// <summary>
         /// Gets the physical sector size of disk represented by the VHDX file.
         /// </summary>
-        public long PhysicalSectorSize
+        public int PhysicalSectorSize
         {
-            get { return _metadata.PhysicalSectorSize; }
+            get { return (int)_metadata.PhysicalSectorSize; }
         }
 
         /// <summary>
