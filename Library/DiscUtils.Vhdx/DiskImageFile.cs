@@ -119,7 +119,7 @@ namespace DiscUtils.Vhdx
         /// <param name="path">The file path to open.</param>
         /// <param name="access">Controls how the file can be accessed.</param>
         public DiskImageFile(string path, FileAccess access)
-            : this(new LocalFileLocator(Path.GetDirectoryName(path)), Path.GetFileName(path), access) {}
+            : this(new LocalFileLocator(Path.GetDirectoryName(path)), Path.GetFileName(path), access) { }
 
         internal DiskImageFile(FileLocator locator, string path, Stream stream, Ownership ownsStream)
             : this(stream, ownsStream)
@@ -218,7 +218,7 @@ namespace DiscUtils.Vhdx
         /// </summary>
         public override bool IsSparse
         {
-            get { return true; }
+            get { return (_metadata.FileParameters.Flags & FileParametersFlags.LeaveBlocksAllocated) == 0; }
         }
 
         /// <summary>
@@ -312,10 +312,16 @@ namespace DiscUtils.Vhdx
         /// <param name="capacity">The desired capacity of the new disk.</param>
         /// <param name="geometry">The desired geometry of the new disk, or <c>null</c> for default.</param>
         /// <returns>An object that accesses the stream as a VHDX file.</returns>
-        public static DiskImageFile InitializeFixed(Stream stream, Ownership ownsStream, long capacity,
-                                                    Geometry geometry)
+        public static DiskImageFile InitializeFixed(Stream stream, Ownership ownsStream, long capacity, Geometry geometry)
         {
-            InitializeFixedInternal(stream, capacity, geometry);
+            var logicalSectorSize = geometry?.BytesPerSector ?? FileParameters.DefaultLogicalSectorSize;
+            InitializeFixedInternal(stream, capacity, FileParameters.DefaultBlockSize, FileParameters.DefaultPhysicalSectorSize, logicalSectorSize);
+            return new DiskImageFile(stream, ownsStream);
+        }
+
+        public static DiskImageFile InitializeFixed(Stream stream, Ownership ownsStream, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize, IProgress<long> progress = null)
+        {
+            InitializeFixedInternal(stream, capacity, blockSize, physicalSectorSize, logicalSectorSize, progress);
             return new DiskImageFile(stream, ownsStream);
         }
 
@@ -430,13 +436,13 @@ namespace DiscUtils.Vhdx
             return GetParentLocations(new LocalFileLocator(basePath));
         }
 
-        internal static DiskImageFile InitializeFixed(FileLocator locator, string path, long capacity, Geometry geometry)
+        internal static DiskImageFile InitializeFixed(FileLocator locator, string path, long capacity, int blockSize, int phyiscalSectorSize, int logicalSectorSize)
         {
             DiskImageFile result = null;
             Stream stream = locator.Open(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
             try
             {
-                InitializeFixedInternal(stream, capacity, geometry);
+                InitializeFixedInternal(stream, capacity, FileParameters.DefaultBlockSize, FileParameters.DefaultPhysicalSectorSize, logicalSectorSize);
                 result = new DiskImageFile(locator, path, stream, Ownership.Dispose);
                 stream = null;
             }
@@ -533,12 +539,59 @@ namespace DiscUtils.Vhdx
             }
         }
 
-        private static void InitializeFixedInternal(Stream stream, long capacity, Geometry geometry)
+        private static void InitializeFixedInternal(Stream stream, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize, IProgress<long> progress = null)
         {
-            throw new NotImplementedException();
+            RegionEntry metadataRegion = InitializeInternal(stream, capacity, blockSize, physicalSectorSize, logicalSectorSize);
+
+            // fill the stream with zeros after the metadata region
+            var contentOffset = stream.Position;
+            stream.SetLength(contentOffset + capacity);
+
+            using (Stream
+                zeroStream = new ZeroStream(capacity),
+                vhdxContentStream = new SubStream(stream, contentOffset, capacity))
+            {
+                var streamPump = new StreamPump
+                {
+                    InputStream = zeroStream,
+                    OutputStream = vhdxContentStream,
+                    SparseCopy = false
+                };
+                if (progress != null)
+                {
+                    progress.Report(0);
+                    streamPump.ProgressEvent += (sender, args) => progress.Report(args.BytesWritten);
+                }
+                streamPump.Run();
+            }
+
+            // Metadata
+            FileParameters fileParams = new FileParameters
+            {
+                BlockSize = (uint)blockSize,
+                Flags = FileParametersFlags.LeaveBlocksAllocated
+            };
+            Stream metadataStream = new SubStream(stream, metadataRegion.FileOffset, metadataRegion.Length);
+            Metadata metadata = Metadata.Initialize(metadataStream, fileParams, (ulong)capacity,
+                (uint)logicalSectorSize, (uint)physicalSectorSize, null);
         }
 
         private static void InitializeDynamicInternal(Stream stream, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize)
+        {
+            RegionEntry metadataRegion = InitializeInternal(stream, capacity, blockSize, physicalSectorSize, logicalSectorSize);
+
+            // Metadata
+            FileParameters fileParams = new FileParameters
+            {
+                BlockSize = (uint)blockSize,
+                Flags = FileParametersFlags.None
+            };
+            Stream metadataStream = new SubStream(stream, metadataRegion.FileOffset, metadataRegion.Length);
+            Metadata metadata = Metadata.Initialize(metadataStream, fileParams, (ulong)capacity,
+                (uint)logicalSectorSize, (uint)physicalSectorSize, null);
+        }
+
+        private static RegionEntry InitializeInternal(Stream stream, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize)
         {
             if (blockSize < Sizes.OneMiB || blockSize > Sizes.OneMiB * 256 || !Utilities.IsPowerOfTwo(blockSize))
             {
@@ -548,7 +601,7 @@ namespace DiscUtils.Vhdx
 
             if (physicalSectorSize != Sizes.Sector && physicalSectorSize != Sizes.Sector4K)
             {
-                throw new ArgumentOutOfRangeException(nameof(physicalSectorSize), 
+                throw new ArgumentOutOfRangeException(nameof(physicalSectorSize),
                     "Physical sector size must be either 512 or 4096");
             }
 
@@ -622,18 +675,7 @@ namespace DiscUtils.Vhdx
             // Set stream to min size
             stream.Position = fileEnd - 1;
             stream.WriteByte(0);
-
-            // Metadata
-            FileParameters fileParams = new FileParameters
-            {
-                BlockSize = (uint)blockSize,
-                Flags = FileParametersFlags.None
-            };
-            ParentLocator parentLocator = new ParentLocator();
-
-            Stream metadataStream = new SubStream(stream, metadataRegion.FileOffset, metadataRegion.Length);
-            Metadata metadata = Metadata.Initialize(metadataStream, fileParams, (ulong)capacity,
-                (uint)logicalSectorSize, (uint)physicalSectorSize, null);
+            return metadataRegion;
         }
 
         private static void InitializeDifferencingInternal(Stream stream, DiskImageFile parent,

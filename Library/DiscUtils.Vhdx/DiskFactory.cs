@@ -69,7 +69,7 @@ namespace DiscUtils.Vhdx
             switch (variant)
             {
                 case "fixed":
-                    return Disk.InitializeFixed(locator, path, diskParameters.Capacity, diskParameters.Geometry);
+                    return Disk.InitializeFixed(locator, path, diskParameters.Capacity, parameters.BlockSize, parameters.PhysicalSectorSize, parameters.LogicalSectorSize);
                 case "dynamic":
                     return Disk.InitializeDynamic(locator, path, parameters.Capacity, parameters.BlockSize, parameters.PhysicalSectorSize, parameters.LogicalSectorSize);
                 default:

@@ -138,9 +138,9 @@ namespace DiscUtils.Vhdx
 
             protected override List<BuilderExtent> FixExtents(out long totalLength)
             {
-                if (_diskType != DiskType.Dynamic)
+                if (_diskType == DiskType.Differencing)
                 {
-                    throw new NotSupportedException("Creation of only dynamic disks currently implemented");
+                    throw new NotSupportedException("Creation of differencing disks currently not implemented");
                 }
 
                 List<BuilderExtent> extents = new List<BuilderExtent>();

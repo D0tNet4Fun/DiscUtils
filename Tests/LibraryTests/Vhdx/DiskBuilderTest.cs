@@ -48,7 +48,7 @@ namespace LibraryTests.Vhdx
             diskContent = sourceStream;
         }
 
-        [Fact(Skip = "Ported from DiscUtils")]
+        [Fact]
         public void BuildFixed()
         {
             DiskBuilder builder = new DiskBuilder();

@@ -465,9 +465,9 @@ namespace DiscUtils.Vhdx
             return new Disk(file, Ownership.Dispose);
         }
 
-        internal static Disk InitializeFixed(FileLocator fileLocator, string path, long capacity, Geometry geometry)
+        internal static Disk InitializeFixed(FileLocator fileLocator, string path, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize)
         {
-            return new Disk(DiskImageFile.InitializeFixed(fileLocator, path, capacity, geometry), Ownership.Dispose);
+            return new Disk(DiskImageFile.InitializeFixed(fileLocator, path, capacity, blockSize, physicalSectorSize, logicalSectorSize), Ownership.Dispose);
         }
 
         internal static Disk InitializeDynamic(FileLocator fileLocator, string path, long capacity, int blockSize, int physicalSectorSize, int logicalSectorSize)
